@@ -77,6 +77,12 @@ It would also be interesting to integrate the features computation into the Open
 GlacierSim: brush edits on a map added for demonstration purposes. They do not propagate to other levels of the multiresolution, but this should be easy to fix.
 
 
+## Windows binaries
+
+For convenience, if you just want to try and play with the two applications, we provide Windows binaries with sample data.
+You can download them from this [release](https://github.com/oargudo/glaciers/releases/tag/v1.0).
+
+
 ## Article
 
 The article is published in [ACM Transactions on Graphics](https://doi.org/10.1145/3414685.3417855). The authors' version can also be read [here](https://hal.archives-ouvertes.fr/hal-02929531/document).
