@@ -1,16 +1,16 @@
-#version 430
+#version 430 core
 
 #ifdef VERTEX_SHADER
 in vec3 a_position;
 
-uniform mat4 gl_ModelViewMatrix;
-uniform mat4 gl_ProjectionMatrix;
+uniform mat4 ModelViewMatrix;
+uniform mat4 ProjectionMatrix;
 
 out vec3 worldPos;
 
 void main(void)
 {
-    mat4 MVP    = gl_ProjectionMatrix * gl_ModelViewMatrix;
+    mat4 MVP    = ProjectionMatrix * ModelViewMatrix;
     gl_Position = MVP * (vec4(a_position, 1.0));
     worldPos    = a_position;
 } 

@@ -502,7 +502,7 @@ void MainWindow::loadBedrocks(const QString& filename, const std::vector<int>& d
 	ui->sb_DEM_hmin->setValue(hmin);
 	ui->sb_DEM_hmax->setValue(hmax);
 	QString ss = QString::number(downscales[0]);
-	for (int i = 1; i < downscales.size(); i++) ss += "," + QString::number(downscales[i]);
+    for (unsigned int i = 1; i < downscales.size(); i++) ss += "," + QString::number(downscales[i]);
 	ui->le_DEM_scales->setText(ss);
 
 	int s = std::min(ui->imglabelDEM->width(), ui->imglabelDEM->height());

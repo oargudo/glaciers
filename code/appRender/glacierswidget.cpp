@@ -1,7 +1,9 @@
 #include "glacierswidget.h"
-#include <QtCore/qdatetime.h>
-#include <QtCore/qtimer.h>
+#include <QDateTime>
+#include <QTimer>
 #include <QPainter>
+#include <QMatrix4x4>
+#include <QVector3D>
 #include <iostream>
 #include "shader-utils.h"
 
@@ -58,9 +60,6 @@ void GlaciersWidget::initializeGL()
 void GlaciersWidget::resizeGL(int w, int h)
 {
     glViewport(0, 0, (GLint)w, (GLint)h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(Math::RadianToDegree(camera.getAngleOfViewV(w, h)), (GLdouble)w / (GLdouble)h, camera.getNearPlane(), camera.getFarPlane());
 }
 
 void GlaciersWidget::paintGL()
@@ -76,18 +75,6 @@ void GlaciersWidget::paintGL()
     glClearColor(0.62f, 0.74f, 0.85f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(Math::RadianToDegree(camera.getAngleOfViewV(width(), height())), (GLdouble)width() / (GLdouble)height(), camera.getNearPlane(), camera.getFarPlane());
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    // Draw
-    gluLookAt(camera.getEye()[0], camera.getEye()[1], camera.getEye()[2], 
-		      camera.getAt()[0],  camera.getAt()[1],  camera.getAt()[2], 
-		      camera.getUp()[0],  camera.getUp()[1],  camera.getUp()[2]);
-
     // Sky
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -102,6 +89,19 @@ void GlaciersWidget::paintGL()
     // Terrain
 	if (meshVAO > 0) {
 		glUseProgram(shader);
+
+        QMatrix4x4 matPerspective;
+        matPerspective.perspective(Math::RadianToDegree(camera.getAngleOfViewV(width(), height())),
+                        (GLdouble)width() / (GLdouble)height(),
+                        camera.getNearPlane(), camera.getFarPlane());
+        glUniformMatrix4fv(glGetUniformLocation(shader, "ProjectionMatrix"), 1, GL_FALSE, matPerspective.data());
+
+        QMatrix4x4 matView;
+        matView.lookAt(QVector3D(camera.getEye()[0], camera.getEye()[1], camera.getEye()[2]),
+                       QVector3D(camera.getAt()[0],  camera.getAt()[1],  camera.getAt()[2]),
+                       QVector3D(camera.getUp()[0],  camera.getUp()[1],  camera.getUp()[2]));
+        glUniformMatrix4fv(glGetUniformLocation(shader, "ModelViewMatrix"), 1, GL_FALSE, matView.data());
+
 		glUniform2f(glGetUniformLocation(shader, "u_worldMin"), terrainBBox.getMin()[0], terrainBBox.getMin()[1]);
 		glUniform2f(glGetUniformLocation(shader, "u_worldSize"), terrainBBox.width(), terrainBBox.height());
 

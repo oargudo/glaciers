@@ -10,18 +10,19 @@ GlacierTerrain::GlacierTerrain()
 	nx = ny = 0;
 }
 
-GlacierTerrain::GlacierTerrain(int nx, int ny) : bedrock(Box2(Vector2(0), Vector2(1)), nx, ny),
+GlacierTerrain::GlacierTerrain(int nx, int ny) : nx(nx), ny(ny),
+                                                 bedrock(Box2(Vector2(0), Vector2(1)), nx, ny),
                                                  ice(Box2(Vector2(0), Vector2(1)), nx, ny),
                                                  ela(Box2(Vector2(0), Vector2(1)), nx, ny),
                                                  beta(Box2(Vector2(0), Vector2(1)), nx, ny),
-                                                 diffusivity(Box2(Vector2(0), Vector2(1)), nx, ny),
-												 nx(nx), ny(ny)
+                                                 diffusivity(Box2(Vector2(0), Vector2(1)), nx, ny)
+
 {
 	initializedBuffers = false;
     terrainSize = Vector2(1, 1);
 }
 
-GlacierTerrain::GlacierTerrain(const ScalarField2& b) : bedrock(b), nx(b.getSizeX()), ny(b.getSizeY()),
+GlacierTerrain::GlacierTerrain(const ScalarField2& b) : nx(b.getSizeX()), ny(b.getSizeY()), bedrock(b),
                                                         ice(b.getDomain(), b.getSizeX(), b.getSizeY()),
                                                         ela(b.getDomain(), b.getSizeX(), b.getSizeY()),
                                                         beta(b.getDomain(), b.getSizeX(), b.getSizeY(), 1.0),
@@ -32,7 +33,7 @@ GlacierTerrain::GlacierTerrain(const ScalarField2& b) : bedrock(b), nx(b.getSize
     terrainSize = Vector2(b.getDomain().width(), b.getDomain().height());
 }
 
-GlacierTerrain::GlacierTerrain(const ScalarField2& b, const ScalarField2& i) : bedrock(b), ice(i), nx(b.getSizeX()), ny(b.getSizeY()),
+GlacierTerrain::GlacierTerrain(const ScalarField2& b, const ScalarField2& i) : nx(b.getSizeX()), ny(b.getSizeY()), bedrock(b), ice(i),
                                                                                ela(b.getDomain(), b.getSizeX(), b.getSizeY()),
                                                                                beta(b.getDomain(), b.getSizeX(), b.getSizeY(), 1.0),
                                                                                diffusivity(b.getDomain(), b.getSizeX(), b.getSizeY())

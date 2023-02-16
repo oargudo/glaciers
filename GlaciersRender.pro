@@ -6,7 +6,7 @@ CONFIG += c++11
 INCLUDEPATH += code
 INCLUDEPATH += code/core
 INCLUDEPATH += code/appRender
-INCLUDEPATH += $$(GLEW_DIR)
+INCLUDEPATH += $$(GLEW_DIR)/include/GL
 
 VPATH += code
 
@@ -34,7 +34,7 @@ HEADERS += \
 FORMS += \
     appRender/mainwindow.ui
 
-LIBS += -L$$(GLEW_DIR) -lglew32
+LIBS += -L$$(GLEW_DIR)/lib/Release/x64 -lglew32
 LIBS += -lopengl32 -lglu32
 
 # Default rules for deployment.

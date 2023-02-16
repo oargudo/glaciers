@@ -1,4 +1,4 @@
-#version 400
+#version 430 core
 
 #ifdef VERTEX_SHADER
 
@@ -11,8 +11,8 @@ in vec3  i_translation;
 in float i_height;
 
 // uniforms
-uniform mat4 gl_ModelViewMatrix;
-uniform mat4 gl_ProjectionMatrix;
+uniform mat4 ModelViewMatrix;
+uniform mat4 ProjectionMatrix;
 uniform vec2 u_cellSize;
 uniform ivec2 u_gridCells;
 
@@ -26,10 +26,10 @@ out ivec2 cellCoords;
 
 void main(void)
 {
-    mat4 MVP    = gl_ProjectionMatrix * gl_ModelViewMatrix;
+    mat4 MVP    = ProjectionMatrix * ModelViewMatrix;
     
     worldPos    = a_position*vec3(u_cellSize, i_height) + i_translation;
-    eyePos      = vec3(gl_ModelViewMatrix*vec4(worldPos, 1.0));
+    eyePos      = vec3(ModelViewMatrix*vec4(worldPos, 1.0));
     worldNormal = a_normal;
     cubeHeight  = i_height;
     

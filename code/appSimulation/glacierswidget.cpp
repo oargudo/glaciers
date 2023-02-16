@@ -1,7 +1,9 @@
 #include "glacierswidget.h"
-#include <QtCore/qdatetime.h>
-#include <QtCore/qtimer.h>
+#include <QDateTime>
+#include <QTimer>
 #include <QPainter>
+#include <QMatrix4x4>
+#include <QVector3D>
 #include <iostream>
 #include "shader-utils.h"
 
@@ -132,12 +134,12 @@ void GlaciersWidget::initializeGL()
 
 void GlaciersWidget::initializeCubeVAO()
 {
-    const int faceVerts[24] = { 0, 4, 5, 1,   // plane ymin
-                                0, 1, 3, 2,   // plane xmin
-                                2, 3, 7, 6,   // plane ymax
-                                4, 6, 7, 5,   // plane xmax
-                                0, 2, 6, 4,   // plane zmin
-                                1, 5, 7, 3 }; // plane zmax
+    const int faceVerts[36] = { 0, 4, 5, 0, 5, 1,   // plane ymin
+                                0, 1, 3, 0, 3, 2,   // plane xmin
+                                2, 3, 7, 2, 7, 6,   // plane ymax
+                                4, 6, 7, 4, 7, 5,   // plane xmax
+                                0, 2, 6, 0, 6, 4,   // plane zmin
+                                1, 5, 7, 1, 7, 3 }; // plane zmax
     const float vertNormal[18] = {
         0, -1, 0,
         -1, 0, 0,
@@ -147,15 +149,15 @@ void GlaciersWidget::initializeCubeVAO()
         0, 0, 1
     };
 
-    std::vector<float> bufferV(6 * 4 * 3, 0);
-    std::vector<float> bufferN(6 * 4 * 3, 0);
-    for (int k = 0; k < 24; k++) {
+    std::vector<float> bufferV(36 * 3, 0);
+    std::vector<float> bufferN(36 * 3, 0);
+    for (int k = 0; k < 36; k++) {
         bufferV[k*3    ] = faceVerts[k] & 0x04 ? 1.f : 0.f;
         bufferV[k*3 + 1] = faceVerts[k] & 0x02 ? 1.f : 0.f;
         bufferV[k*3 + 2] = faceVerts[k] & 0x01 ? 1.f : 0.f;
-        bufferN[k*3    ] = vertNormal[int(k / 4) * 3];
-        bufferN[k*3 + 1] = vertNormal[int(k / 4) * 3 + 1];
-        bufferN[k*3 + 2] = vertNormal[int(k / 4) * 3 + 2];
+        bufferN[k*3    ] = vertNormal[int(k / 6) * 3];
+        bufferN[k*3 + 1] = vertNormal[int(k / 6) * 3 + 1];
+        bufferN[k*3 + 2] = vertNormal[int(k / 6) * 3 + 2];
     }
 
     glUseProgram(shaderCubes);
@@ -215,9 +217,6 @@ void GlaciersWidget::reloadShader()
 void GlaciersWidget::resizeGL(int w, int h)
 {
     glViewport(0, 0, (GLint)w, (GLint)h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(Math::RadianToDegree(camera.getAngleOfViewV(w, h)), (GLdouble)w / (GLdouble)h, camera.getNearPlane(), camera.getFarPlane());
 }
 
 void GlaciersWidget::paintGL()
@@ -232,18 +231,6 @@ void GlaciersWidget::paintGL()
     // Clear
     glClearColor(0.62f, 0.74f, 0.85f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(Math::RadianToDegree(camera.getAngleOfViewV(width(), height())), (GLdouble)width() / (GLdouble)height(), camera.getNearPlane(), camera.getFarPlane());
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    // Draw
-    gluLookAt(camera.getEye()[0], camera.getEye()[1], camera.getEye()[2], 
-		      camera.getAt()[0],  camera.getAt()[1],  camera.getAt()[2], 
-		      camera.getUp()[0],  camera.getUp()[1],  camera.getUp()[2]);
 
     // Sky
     glEnable(GL_DEPTH_TEST);
@@ -329,6 +316,19 @@ void GlaciersWidget::drawVoxels()
     glUseProgram(shaderCubes);
     glBindVertexArray(vaoCube);
 
+    // camera
+    QMatrix4x4 matPerspective;
+    matPerspective.perspective(Math::RadianToDegree(camera.getAngleOfViewV(width(), height())),
+                    (GLdouble)width() / (GLdouble)height(),
+                    camera.getNearPlane(), camera.getFarPlane());
+    glUniformMatrix4fv(glGetUniformLocation(shaderCubes, "ProjectionMatrix"), 1, GL_FALSE, matPerspective.data());
+
+    QMatrix4x4 matView;
+    matView.lookAt(QVector3D(camera.getEye()[0], camera.getEye()[1], camera.getEye()[2]),
+                   QVector3D(camera.getAt()[0],  camera.getAt()[1],  camera.getAt()[2]),
+                   QVector3D(camera.getUp()[0],  camera.getUp()[1],  camera.getUp()[2]));
+    glUniformMatrix4fv(glGetUniformLocation(shaderCubes, "ModelViewMatrix"), 1, GL_FALSE, matView.data());
+
     // common uniforms
     glUniform2f(glGetUniformLocation(shaderCubes, "u_worldSize"), terrainBBox.width(), terrainBBox.height());
     glUniform2f(glGetUniformLocation(shaderCubes, "u_cellSize"),  glacierTerrain->cellWidth(), glacierTerrain->cellHeight());
@@ -356,7 +356,7 @@ void GlaciersWidget::drawVoxels()
 
         glBindBuffer(GL_ARRAY_BUFFER, vboInstanceData);
         glBufferData(GL_ARRAY_BUFFER, sizeof(CubeInstanceData) * cubeInstancesBedrock.size(), &cubeInstancesBedrock[0], GL_DYNAMIC_DRAW);
-        glDrawArraysInstanced(GL_QUADS, 0, 24, GLsizei(cubeInstancesBedrock.size()));
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, GLsizei(cubeInstancesBedrock.size()));
     }
 
     // draw ice
@@ -392,7 +392,7 @@ void GlaciersWidget::drawVoxels()
 
         glBindBuffer(GL_ARRAY_BUFFER, vboInstanceData);
         glBufferData(GL_ARRAY_BUFFER, sizeof(CubeInstanceData) * cubeInstancesIce.size(), &cubeInstancesIce[0], GL_DYNAMIC_DRAW);
-        glDrawArraysInstanced(GL_QUADS, 0, 24, GLsizei(cubeInstancesIce.size()));
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 36, GLsizei(cubeInstancesIce.size()));
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
